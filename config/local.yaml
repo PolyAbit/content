@@ -1,0 +1,11 @@
+env: "local"
+storage_path: "./storage/storage.db"
+grpc:
+  port: 44045
+  timeout: 10h
+  gateway_port: 8081
+clients:
+  auth:
+    address: "localhost:44044"
+    timeout: 60s
+    retriesCount: 10
