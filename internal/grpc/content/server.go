@@ -3,8 +3,10 @@ package grpccontent
 import (
 	"context"
 	"errors"
-	"regexp"
 
+	"github.com/PolyAbit/content/internal/lib/converter"
+	"github.com/PolyAbit/content/internal/lib/validators"
+	"github.com/PolyAbit/content/internal/models"
 	"github.com/PolyAbit/content/internal/services/content"
 	contentv1 "github.com/PolyAbit/protos/gen/go/content"
 	"google.golang.org/grpc"
@@ -19,6 +21,7 @@ type serverAPI struct {
 
 type Content interface {
 	CreateDirection(ctx context.Context, code string, name string, exams string, description string) error
+	GetDirections(ctx context.Context) ([]models.Direction, error)
 }
 
 func Register(gRPCServer *grpc.Server, content Content) {
@@ -26,7 +29,7 @@ func Register(gRPCServer *grpc.Server, content Content) {
 }
 
 func (s *serverAPI) CreateDirection(ctx context.Context, in *contentv1.CreateDirectionRequest) (*contentv1.Empty, error) {
-	if err := validateCreateDirection(in); err != nil {
+	if err := validators.ValidateCreateDirection(in); err != nil {
 		return &contentv1.Empty{}, err
 	}
 
@@ -42,28 +45,21 @@ func (s *serverAPI) CreateDirection(ctx context.Context, in *contentv1.CreateDir
 	return &contentv1.Empty{}, nil
 }
 
-const codeRegexp = `^\d{2}\.\d{2}\.\d{2}$`
+func (s *serverAPI) GetDirections(ctx context.Context, in *contentv1.Empty) (*contentv1.Directions, error) {
+	directions, err := s.content.GetDirections(ctx)
 
-func validateCreateDirection(req *contentv1.CreateDirectionRequest) error {
-	if err := validateCode(req.GetCode()); err != nil {
-		return err
-	}
-	if req.GetName() == "" {
-		return status.Error(codes.InvalidArgument, "name is required")
-	}
-	if req.GetExams() == "" {
-		return status.Error(codes.InvalidArgument, "exams is required")
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get directions")
 	}
 
-	return nil
+	grpcDirections := make([]*contentv1.Direction, len(directions))
+
+	for _, dir := range directions {
+		grpcDirections = append(grpcDirections, converter.FromDirectionModelToResponse(dir))
+	}
+
+	return &contentv1.Directions{
+		Directions: grpcDirections,
+	}, nil
 }
 
-func validateCode(code string) error {
-	if code == "" {
-		return status.Error(codes.InvalidArgument, "code is required")
-	}
-	if !regexp.MustCompile(codeRegexp).MatchString(code) {
-		return status.Error(codes.InvalidArgument, "code must be like 12.34.56")
-	}
-	return nil
-}

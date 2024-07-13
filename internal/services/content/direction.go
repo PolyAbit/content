@@ -28,3 +28,15 @@ func (c *Content) CreateDirection(ctx context.Context, code string, name string,
 
 	return nil
 }
+
+func (c *Content) GetDirections(ctx context.Context) ([]models.Direction, error) {
+	directions, err := c.directionProvider.GetDirections(ctx)
+
+	if err != nil {
+		c.log.Error("failed to save direction", sl.Err(err))
+
+		return []models.Direction{}, err
+	}
+
+	return directions, nil
+}

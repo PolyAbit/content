@@ -46,3 +46,29 @@ func (s *Storage) SaveDirection(ctx context.Context, code string, name string, e
 
 	return nil
 }
+
+func (s *Storage) GetDirections(ctx context.Context) ([]models.Direction, error) {
+	const op = "storage.op.GetDirections"
+
+	rows, err := s.db.Query("SELECT * FROM direction")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	var directions []models.Direction
+
+	for rows.Next() {
+		var direction models.Direction
+		if err := rows.Scan(&direction.Id, &direction.Code, &direction.Name, &direction.Description, &direction.Exams); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		directions = append(directions, direction)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return directions, nil
+}
