@@ -10,6 +10,7 @@ import (
 
 	grpccontent "github.com/PolyAbit/content/internal/grpc/content"
 	"github.com/PolyAbit/content/internal/lib/logger/sl"
+	middleware "github.com/PolyAbit/content/internal/lib/middlewares"
 	contentv1 "github.com/PolyAbit/protos/gen/go/content"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -26,9 +27,14 @@ type App struct {
 }
 
 func New(log *slog.Logger, contentService grpccontent.Content, gRPCPort int, httpPort int) *App {
-	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+	authMiddleware := &middleware.AuthMiddleware{AuthFunc: middleware.CheckAuth}
+
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
 		recovery.UnaryServerInterceptor(),
-	))
+		authMiddleware.UnaryInterceptor,
+	}
+
+	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(unaryInterceptors...))
 
 	grpccontent.Register(gRPCServer, contentService)
 
