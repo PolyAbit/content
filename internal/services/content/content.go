@@ -3,12 +3,10 @@ package content
 import (
 	"context"
 	"log/slog"
-
-	"github.com/PolyAbit/content/internal/models"
 )
 
 type DirectionStorage interface {
-	SaveDirection(ctx context.Context, code string, name string, exams string, description string) (models.Direction, error)
+	SaveDirection(ctx context.Context, code string, name string, exams string, description string) (error)
 }
 
 type Content struct {

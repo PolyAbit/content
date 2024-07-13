@@ -25,13 +25,14 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) SaveDirection(ctx context.Context, code string, name string, exams string, description string) (models.Direction, error) {
+func (s *Storage) SaveDirection(ctx context.Context, code string, name string, exams string, description string) error {
 	const op = "storage.sqlite.SaveUser"
 
 	fmt.Println(code, name, exams, description)
+
 	stmt, err := s.db.Prepare("INSERT INTO direction(code, name, exams, description) VALUES(?, ?, ?, ?)")
 	if err != nil {
-		return models.Direction{}, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	_, err = stmt.ExecContext(ctx, code, name, exams, description)
@@ -39,11 +40,11 @@ func (s *Storage) SaveDirection(ctx context.Context, code string, name string, e
 		var sqliteErr sqlite3.Error
 
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return models.Direction{}, fmt.Errorf("%s: %w", op, models.ErrDirectionExists)
+			return fmt.Errorf("%s: %w", op, models.ErrDirectionExists)
 		}
 
-		return models.Direction{}, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return models.Direction{}, nil
+	return nil
 }

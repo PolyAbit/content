@@ -2,9 +2,10 @@ package grpccontent
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"regexp"
 
-	"github.com/PolyAbit/content/internal/models"
+	"github.com/PolyAbit/content/internal/services/content"
 	contentv1 "github.com/PolyAbit/protos/gen/go/content"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -17,21 +18,52 @@ type serverAPI struct {
 }
 
 type Content interface {
-	CreateDirection(ctx context.Context, code string, name string, exams string, description string) (models.Direction, error)
+	CreateDirection(ctx context.Context, code string, name string, exams string, description string) error
 }
 
 func Register(gRPCServer *grpc.Server, content Content) {
 	contentv1.RegisterContentServer(gRPCServer, &serverAPI{content: content})
 }
 
-func (s *serverAPI) CreateDirection(ctx context.Context, in *contentv1.CreateDirectionRequest) (*contentv1.Direction, error) {
-	_, err := s.content.CreateDirection(ctx, in.GetCode(), in.GetName(), in.GetExams(), in.GetDescription())
-
-	fmt.Println(err)
-
-	if err != nil {
-		return &contentv1.Direction{}, status.Error(codes.InvalidArgument, "invalid email or password")
+func (s *serverAPI) CreateDirection(ctx context.Context, in *contentv1.CreateDirectionRequest) (*contentv1.Empty, error) {
+	if err := validateCreateDirection(in); err != nil {
+		return &contentv1.Empty{}, err
 	}
 
-	return &contentv1.Direction{Id: 1, Name: "матобес", Code: in.GetCode(), Exams: in.GetExams(), Description: in.GetDescription()}, nil
+	err := s.content.CreateDirection(ctx, in.GetCode(), in.GetName(), in.GetExams(), in.GetDescription())
+
+	if errors.Is(err, content.ErrCodeAlreadyUsed) {
+		return &contentv1.Empty{}, status.Error(codes.AlreadyExists, "direction with same code already exists")
+	}
+	if err != nil {
+		return &contentv1.Empty{}, status.Error(codes.Internal, "internal error")
+	}
+
+	return &contentv1.Empty{}, nil
+}
+
+const codeRegexp = `^\d{2}\.\d{2}\.\d{2}$`
+
+func validateCreateDirection(req *contentv1.CreateDirectionRequest) error {
+	if err := validateCode(req.GetCode()); err != nil {
+		return err
+	}
+	if req.GetName() == "" {
+		return status.Error(codes.InvalidArgument, "name is required")
+	}
+	if req.GetExams() == "" {
+		return status.Error(codes.InvalidArgument, "exams is required")
+	}
+
+	return nil
+}
+
+func validateCode(code string) error {
+	if code == "" {
+		return status.Error(codes.InvalidArgument, "code is required")
+	}
+	if !regexp.MustCompile(codeRegexp).MatchString(code) {
+		return status.Error(codes.InvalidArgument, "code must be like 12.34.56")
+	}
+	return nil
 }
