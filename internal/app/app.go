@@ -4,6 +4,8 @@ import (
 	"log/slog"
 
 	grpcapp "github.com/PolyAbit/content/internal/app/grpc"
+	"github.com/PolyAbit/content/internal/services/content"
+	"github.com/PolyAbit/content/internal/storage/sqlite"
 )
 
 type App struct {
@@ -16,15 +18,15 @@ func New(
 	httpPort int,
 	storagePath string,
 ) *App {
-	// storage, err := sqlite.New(storagePath)
+	storage, err := sqlite.New(storagePath)
 
-	// if err != nil {
-	// 	panic(err)
-	// }
+	if err != nil {
+		panic(err)
+	}
 
-	// authService := auth.New(log, storage, tokenTTL, tokenSecret)
+	contentService := content.New(log, storage)
 
-	grpcApp := grpcapp.New(log, nil, grpcPort, httpPort)
+	grpcApp := grpcapp.New(log, contentService, grpcPort, httpPort)
 
 	return &App{
 		GRPCServer: grpcApp,

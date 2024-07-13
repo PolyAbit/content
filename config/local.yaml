@@ -1,5 +1,5 @@
 env: "local"
-storage_path: "./storage/storage.db"
+storage_path: "./storage/content.db"
 grpc:
   port: 44045
   timeout: 10h
