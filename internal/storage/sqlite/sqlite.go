@@ -28,8 +28,6 @@ func New(storagePath string) (*Storage, error) {
 func (s *Storage) SaveDirection(ctx context.Context, code string, name string, exams string, description string) error {
 	const op = "storage.sqlite.SaveUser"
 
-	fmt.Println(code, name, exams, description)
-
 	stmt, err := s.db.Prepare("INSERT INTO direction(code, name, exams, description) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
