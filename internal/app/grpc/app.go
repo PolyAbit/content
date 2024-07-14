@@ -26,8 +26,8 @@ type App struct {
 	httpPort   int
 }
 
-func New(log *slog.Logger, contentService grpccontent.Content, gRPCPort int, httpPort int) *App {
-	authMiddleware := &middleware.AuthMiddleware{AuthFunc: middleware.CheckAuth}
+func New(log *slog.Logger, contentService grpccontent.Content, gRPCPort int, httpPort int, jwtSecret string) *App {
+	authMiddleware := &middleware.AuthMiddleware{AuthFunc: middleware.New(jwtSecret)}
 
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
 		recovery.UnaryServerInterceptor(),

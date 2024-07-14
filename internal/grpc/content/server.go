@@ -62,4 +62,3 @@ func (s *serverAPI) GetDirections(ctx context.Context, in *contentv1.Empty) (*co
 		Directions: grpcDirections,
 	}, nil
 }
-

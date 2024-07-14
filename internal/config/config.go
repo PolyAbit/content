@@ -13,6 +13,7 @@ type Config struct {
 	StoragePath string     `yaml:"storage_path" env-required:"true"`
 	GRPC        GRPCConfig `yaml:"grpc"`
 	Clients     Clients    `yaml:"clients"`
+	JwtSecret   string     `yaml:"jwt_secret"`
 }
 
 type GRPCConfig struct {

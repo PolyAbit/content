@@ -18,7 +18,7 @@ func main() {
 
 	log.Info("init config and logger")
 
-	application := app.New(log, cfg.GRPC.Port, cfg.GRPC.GatewayPort, cfg.StoragePath)
+	application := app.New(log, cfg)
 
 	go application.GRPCServer.MustRun()
 

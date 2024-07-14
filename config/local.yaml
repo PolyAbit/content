@@ -4,6 +4,7 @@ grpc:
   port: 44045
   timeout: 10h
   gateway_port: 8081
+token: "TEST"
 clients:
   auth:
     address: "localhost:44044"
