@@ -81,7 +81,7 @@ func (s *serverAPI) GetProfile(ctx context.Context, in *contentv1.GetProfileRequ
 	userId, ok := middleware.UIDFromContext(ctx)
 
 	if !ok {
-		return nil, status.Error(codes.Internal, "failed get userId")
+		return nil, status.Error(codes.Unauthenticated, "failed get userId")
 	}
 
 	profile, err := s.content.GetProfile(ctx, userId)
@@ -97,11 +97,14 @@ func (s *serverAPI) UpdateProfile(ctx context.Context, in *contentv1.Profile) (*
 	userId, ok := middleware.UIDFromContext(ctx)
 
 	if !ok {
-		return nil, status.Error(codes.Internal, "failed get userId")
+		return nil, status.Error(codes.Unauthenticated, "failed get userId")
 	}
 
 	profile, err := s.content.UpdateProfile(ctx, userId, in.GetFirstName(), in.GetMiddleName(), in.GetLastName())
 
+	if errors.Is(err, models.ErrProfileNotFound) {
+		return nil, status.Error(codes.NotFound, "profile not found")
+	}
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed update profile")
 	}

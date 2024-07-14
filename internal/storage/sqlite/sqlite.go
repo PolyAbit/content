@@ -92,15 +92,64 @@ func (s *Storage) DeleteDirection(ctx context.Context, directionId int64) error 
 }
 
 func (s *Storage) GetProfile(ctx context.Context, userId int64) (models.Profile, error) {
+	const op = "storage.sqlite.GetProfile"
+
+	var profileExists bool
+	err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM profiles WHERE userId = ?)", userId).Scan(&profileExists)
+	if err != nil {
+		return models.Profile{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if profileExists {
+		var firstName, middleName, lastName sql.NullString
+		err = s.db.QueryRow("SELECT firstName, middleName, lastName FROM profiles WHERE userId = ?", userId).Scan(&firstName, &middleName, &lastName)
+
+		if err != nil {
+			return models.Profile{}, fmt.Errorf("%s: %w", op, err)
+		}
+
+		return models.Profile{
+			UserId:     userId,
+			FirstName:  firstName.String,
+			MiddleName: middleName.String,
+			LastName:   lastName.String,
+		}, nil
+	}
+
+	_, err = s.db.Exec("INSERT INTO profiles (userId) VALUES (?)", userId)
+	if err != nil {
+		return models.Profile{}, fmt.Errorf("%s: %w", op, err)
+	}
+
 	return models.Profile{
 		UserId:     userId,
-		FirstName:  "alex",
-		MiddleName: "d",
-		LastName:   "kyd",
+		FirstName:  "",
+		MiddleName: "",
+		LastName:   "",
 	}, nil
 }
 
 func (s *Storage) UpdateProfile(ctx context.Context, userId int64, firstName string, middleName string, lastName string) (models.Profile, error) {
+	stmt, err := s.db.Prepare("UPDATE profiles SET firstName = ?, middleName = ?, lastName = ? WHERE userId = ?")
+	if err != nil {
+		return models.Profile{}, err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(firstName, middleName, lastName, userId)
+	if err != nil {
+		return models.Profile{}, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return models.Profile{}, err
+	}
+
+	if rowsAffected == 0 {
+		return models.Profile{}, models.ErrProfileNotFound
+	}
+
 	return models.Profile{
 		UserId:     userId,
 		FirstName:  firstName,
