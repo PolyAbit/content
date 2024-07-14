@@ -100,6 +100,24 @@ func (a *App) startGrpcServer() error {
 	return nil
 }
 
+func allowedOrigin(origin string) bool {
+	return true
+}
+
+func cors(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if allowedOrigin(r.Header.Get("Origin")) {
+			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, ResponseType")
+		}
+		if r.Method == "OPTIONS" {
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 func (a *App) startHttpServer(ctx context.Context) error {
 	mux := runtime.NewServeMux()
 
@@ -114,7 +132,7 @@ func (a *App) startHttpServer(ctx context.Context) error {
 
 	a.log.Info("gateway server started", slog.String("addr", fmt.Sprintf(":%d", a.httpPort)))
 
-	return http.ListenAndServe(fmt.Sprintf("localhost:%d", a.httpPort), mux)
+	return http.ListenAndServe(fmt.Sprintf("localhost:%d", a.httpPort), cors(mux))
 }
 
 func (a *App) Stop() {
