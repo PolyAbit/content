@@ -3,7 +3,7 @@ storage_path: "./storage/content.db"
 grpc:
   port: 44045
   timeout: 10h
-  gateway_port: 8081
+  gateway_port: 8082
 token: "TEST"
 clients:
   auth:
