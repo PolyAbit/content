@@ -10,6 +10,7 @@ import (
 type DirectionStorage interface {
 	SaveDirection(ctx context.Context, code string, name string, exams string, description string) error
 	GetDirections(ctx context.Context) ([]models.Direction, error)
+	DeleteDirection(ctx context.Context, directionId int64) error
 }
 
 type Content struct {

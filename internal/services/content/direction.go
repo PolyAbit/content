@@ -40,3 +40,15 @@ func (c *Content) GetDirections(ctx context.Context) ([]models.Direction, error)
 
 	return directions, nil
 }
+
+func (c *Content) DeleteDirection(ctx context.Context, directionId int64) error {
+	err := c.directionProvider.DeleteDirection(ctx, directionId)
+
+	if err != nil {
+		c.log.Error("failed to delete direction", sl.Err(err))
+
+		return err
+	}
+
+	return nil
+}

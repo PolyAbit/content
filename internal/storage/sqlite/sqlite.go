@@ -72,3 +72,22 @@ func (s *Storage) GetDirections(ctx context.Context) ([]models.Direction, error)
 
 	return directions, nil
 }
+
+func (s *Storage) DeleteDirection(ctx context.Context, directionId int64) error {
+	const op = "storage.sqlite.DeleteDirection"
+
+	stmt, err := s.db.Prepare("DELETE FROM direction WHERE id=?")
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.Exec(directionId)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+

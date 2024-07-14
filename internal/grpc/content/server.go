@@ -22,6 +22,7 @@ type serverAPI struct {
 type Content interface {
 	CreateDirection(ctx context.Context, code string, name string, exams string, description string) error
 	GetDirections(ctx context.Context) ([]models.Direction, error)
+	DeleteDirection(ctx context.Context, directionId int64) error
 }
 
 func Register(gRPCServer *grpc.Server, content Content) {
@@ -61,4 +62,14 @@ func (s *serverAPI) GetDirections(ctx context.Context, in *contentv1.Empty) (*co
 	return &contentv1.Directions{
 		Directions: grpcDirections,
 	}, nil
+}
+
+func (s *serverAPI) DeleteDirection(ctx context.Context, in *contentv1.DeleteDirectionRequest) (*contentv1.Empty, error) {
+	err := s.content.DeleteDirection(ctx, in.GetDirectionId())
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to delete direction")
+	}
+
+	return &contentv1.Empty{}, nil
 }
