@@ -91,3 +91,20 @@ func (s *Storage) DeleteDirection(ctx context.Context, directionId int64) error 
 	return nil
 }
 
+func (s *Storage) GetProfile(ctx context.Context, userId int64) (models.Profile, error) {
+	return models.Profile{
+		UserId:     userId,
+		FirstName:  "alex",
+		MiddleName: "d",
+		LastName:   "kyd",
+	}, nil
+}
+
+func (s *Storage) UpdateProfile(ctx context.Context, userId int64, firstName string, middleName string, lastName string) (models.Profile, error) {
+	return models.Profile{
+		UserId:     userId,
+		FirstName:  firstName,
+		MiddleName: middleName,
+		LastName:   lastName,
+	}, nil
+}

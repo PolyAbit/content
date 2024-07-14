@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/PolyAbit/content/internal/lib/converter"
+	middleware "github.com/PolyAbit/content/internal/lib/middlewares"
 	"github.com/PolyAbit/content/internal/lib/validators"
 	"github.com/PolyAbit/content/internal/models"
 	"github.com/PolyAbit/content/internal/services/content"
@@ -23,6 +24,8 @@ type Content interface {
 	CreateDirection(ctx context.Context, code string, name string, exams string, description string) error
 	GetDirections(ctx context.Context) ([]models.Direction, error)
 	DeleteDirection(ctx context.Context, directionId int64) error
+	GetProfile(ctx context.Context, userId int64) (models.Profile, error)
+	UpdateProfile(ctx context.Context, userId int64, firstName string, middleName string, lastName string) (models.Profile, error)
 }
 
 func Register(gRPCServer *grpc.Server, content Content) {
@@ -56,7 +59,7 @@ func (s *serverAPI) GetDirections(ctx context.Context, in *contentv1.Empty) (*co
 	grpcDirections := make([]*contentv1.Direction, len(directions))
 
 	for _, dir := range directions {
-		grpcDirections = append(grpcDirections, converter.FromDirectionModelToResponse(dir))
+		grpcDirections = append(grpcDirections, converter.ConvertDirection(dir))
 	}
 
 	return &contentv1.Directions{
@@ -72,4 +75,36 @@ func (s *serverAPI) DeleteDirection(ctx context.Context, in *contentv1.DeleteDir
 	}
 
 	return &contentv1.Empty{}, nil
+}
+
+func (s *serverAPI) GetProfile(ctx context.Context, in *contentv1.GetProfileRequest) (*contentv1.Profile, error) {
+	userId, ok := middleware.UIDFromContext(ctx)
+
+	if !ok {
+		return nil, status.Error(codes.Internal, "failed get userId")
+	}
+
+	profile, err := s.content.GetProfile(ctx, userId)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed get profile")
+	}
+
+	return converter.ConvertProfile(profile), nil
+}
+
+func (s *serverAPI) UpdateProfile(ctx context.Context, in *contentv1.Profile) (*contentv1.Profile, error) {
+	userId, ok := middleware.UIDFromContext(ctx)
+
+	if !ok {
+		return nil, status.Error(codes.Internal, "failed get userId")
+	}
+
+	profile, err := s.content.UpdateProfile(ctx, userId, in.GetFirstName(), in.GetMiddleName(), in.GetLastName())
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed update profile")
+	}
+
+	return converter.ConvertProfile(profile), nil
 }

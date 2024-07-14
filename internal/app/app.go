@@ -23,7 +23,7 @@ func New(
 		panic(err)
 	}
 
-	contentService := content.New(log, storage)
+	contentService := content.New(log, storage, storage)
 
 	grpcApp := grpcapp.New(log, contentService, cfg.GRPC.Port, cfg.GRPC.GatewayPort, cfg.JwtSecret)
 
