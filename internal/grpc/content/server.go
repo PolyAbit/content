@@ -58,8 +58,8 @@ func (s *serverAPI) GetDirections(ctx context.Context, in *contentv1.Empty) (*co
 
 	grpcDirections := make([]*contentv1.Direction, len(directions))
 
-	for _, dir := range directions {
-		grpcDirections = append(grpcDirections, converter.ConvertDirection(dir))
+	for i := 0; i < len(directions); i++ {
+		grpcDirections[i] = converter.ConvertDirection(directions[i])
 	}
 
 	return &contentv1.Directions{
