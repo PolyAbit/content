@@ -1,9 +1,11 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 
 	grpcapp "github.com/PolyAbit/content/internal/app/grpc"
+	grpcauth "github.com/PolyAbit/content/internal/clients/auth/grpc"
 	"github.com/PolyAbit/content/internal/config"
 	"github.com/PolyAbit/content/internal/services/content"
 	"github.com/PolyAbit/content/internal/storage/sqlite"
@@ -25,7 +27,13 @@ func New(
 
 	contentService := content.New(log, storage, storage)
 
-	grpcApp := grpcapp.New(log, contentService, cfg.GRPC.Port, cfg.GRPC.GatewayPort, cfg.JwtSecret)
+	authClient, err := grpcauth.New(context.Background(), log, cfg.Clients.Auth.Address, cfg.Clients.Auth.Timeout, int(cfg.Clients.Auth.RetriesCount))
+
+	if err != nil {
+		panic(err)
+	}
+
+	grpcApp := grpcapp.New(log, contentService, authClient, cfg.GRPC.Port, cfg.GRPC.GatewayPort, cfg.JwtSecret)
 
 	return &App{
 		GRPCServer: grpcApp,

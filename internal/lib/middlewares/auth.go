@@ -23,10 +23,16 @@ type UserClaim struct {
 }
 
 type userId string
+type isAdmin string
 
 const (
-	userKey userId = "userId"
+	userKey    userId  = "userId"
+	isAdminKey isAdmin = "isAdmin"
 )
+
+type PermissionProvider interface {
+	IsAdmin(ctx context.Context, userId int64) (bool, error)
+}
 
 func (a *AuthMiddleware) UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	authorized, updatedContext, err := a.AuthFunc(ctx)
@@ -41,7 +47,7 @@ func (a *AuthMiddleware) UnaryInterceptor(ctx context.Context, req interface{}, 
 	return handler(updatedContext, req)
 }
 
-func New(key string) func(context.Context) (bool, context.Context, error) {
+func New(key string, permProvider PermissionProvider) func(context.Context) (bool, context.Context, error) {
 	return func(ctx context.Context) (bool, context.Context, error) {
 		md := metadata.ExtractIncoming(ctx)
 
@@ -68,13 +74,26 @@ func New(key string) func(context.Context) (bool, context.Context, error) {
 			return false, ctx, fmt.Errorf("invalid token: %w", err)
 		}
 
-		newCtx := context.WithValue(ctx, userKey, userClaim.Uid)
+		ctx = context.WithValue(ctx, userKey, userClaim.Uid)
 
-		return true, newCtx, nil
+		isAdmin, err := permProvider.IsAdmin(ctx, userClaim.Uid)
+
+		if err != nil {
+			return false, ctx, fmt.Errorf("failed to get permission: %w", err)
+		}
+
+		ctx = context.WithValue(ctx, isAdminKey, isAdmin)
+
+		return true, ctx, nil
 	}
 }
 
 func UIDFromContext(ctx context.Context) (int64, bool) {
 	uid, ok := ctx.Value(userKey).(int64)
 	return uid, ok
+}
+
+func IsAdminFromContext(ctx context.Context) (bool, bool) {
+	isAdmin, ok := ctx.Value(isAdminKey).(bool)
+	return isAdmin, ok
 }

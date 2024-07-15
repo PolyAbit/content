@@ -25,7 +25,7 @@ type GRPCConfig struct {
 type Client struct {
 	Address      string        `yaml:"address"`
 	Timeout      time.Duration `yaml:"timeout"`
-	Retriescount int64         `yaml:"retriesCount"`
+	RetriesCount int64         `yaml:"retries_count"`
 }
 
 type Clients struct {
